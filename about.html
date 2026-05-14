@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en" class="bg-black text-zinc-200">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>exempli — about</title>
+    <meta name="description" content="exempli is a small bench of engineers building custom software for teams who've outgrown the off-the-shelf stack." />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              accent: { DEFAULT: "#E8A87C", dim: "#C98C66", bright: "#F4B891" },
+              ink: { 900: "#0A0A0A", 800: "#111111", 700: "#1A1A1A", 500: "#3A3A3A", 300: "#8A8A8A", 100: "#B8B8B8" },
+            },
+            fontFamily: { sans: ["Inter", "system-ui", "sans-serif"], mono: ["JetBrains Mono", "ui-monospace", "monospace"] },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      html, body { background: #000; color: #b8b8b8; -webkit-font-smoothing: antialiased; }
+      ::selection { background: #e8a87c; color: #000; }
+
+      #nav {
+        transition: background-color 0.45s ease, backdrop-filter 0.45s ease, border-color 0.45s ease, padding 0.4s ease;
+        border-bottom: 1px solid transparent;
+        background-color: transparent;
+      }
+      #nav.is-scrolled {
+        background-color: rgba(12, 12, 12, 0.62);
+        backdrop-filter: blur(14px) saturate(140%);
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
+        border-bottom-color: rgba(58, 58, 58, 0.35);
+        padding-top: 1rem; padding-bottom: 1rem;
+      }
+
+      .i-dot {
+        background-image: linear-gradient(to bottom, #e8a87c 0%, #e8a87c 30%, #b8b8b8 30%, #b8b8b8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .grain::after {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+        opacity: 0.06; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      .cursor {
+        position: fixed; top: 0; left: 0; width: 14px; height: 14px;
+        border: 1px solid #e8a87c; border-radius: 50%; pointer-events: none;
+        z-index: 90; mix-blend-mode: difference; transform: translate(-50%, -50%);
+        transition: width 0.25s, height 0.25s, background 0.25s;
+      }
+      .cursor.is-hovering { width: 48px; height: 48px; background: #e8a87c; }
+      @media (hover: none) { .cursor { display: none; } }
+
+      .section-marker {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px; letter-spacing: 0.18em;
+        color: #8a8a8a; text-transform: uppercase;
+      }
+      .section-marker .accent { color: #e8a87c; }
+
+      .link-hover { position: relative; display: inline-block; overflow: hidden; }
+      .link-hover .link-inner { display: block; transition: transform 0.5s cubic-bezier(0.6, 0, 0.2, 1); }
+      .link-hover .link-ghost { position: absolute; inset: 0; transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.6, 0, 0.2, 1); color: #e8a87c; }
+      .link-hover:hover .link-inner { transform: translateY(-100%); }
+      .link-hover:hover .link-ghost { transform: translateY(0%); }
+
+      /* Hero orb canvas — same shader as home, positioned right */
+      .about-canvas {
+        position: absolute;
+        right: -10vw;
+        top: 50%;
+        transform: translateY(-50%);
+        width: min(70vw, 720px);
+        height: min(70vw, 720px);
+        pointer-events: none;
+        opacity: 0;
+        z-index: 0;
+        transition: opacity 1.4s ease;
+      }
+      .about-canvas.is-visible { opacity: 1; }
+      .hero-content { position: relative; z-index: 1; }
+
+      /* Value cards */
+      .value-card {
+        position: relative;
+        padding: 2.5rem 2rem;
+        border-right: 1px solid rgba(58, 58, 58, 0.45);
+        transition: background 0.5s ease;
+      }
+      .value-card:last-child { border-right: none; }
+      .value-card:hover { background: rgba(232, 168, 124, 0.04); }
+      .value-card::after {
+        content: ""; position: absolute; left: 0; bottom: 0;
+        width: 0; height: 1px; background: #e8a87c;
+        transition: width 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+      }
+      .value-card:hover::after { width: 100%; }
+      .value-marker { color: #8a8a8a; transition: color 0.4s ease; }
+      .value-card:hover .value-marker { color: #e8a87c; }
+      .value-title {
+        font-family: "Inter", sans-serif; font-weight: 800; color: #fff;
+        font-size: clamp(28px, 3.4vw, 48px); letter-spacing: -0.025em; line-height: 1.05;
+      }
+
+      @media (max-width: 768px) {
+        .value-card { border-right: none; border-bottom: 1px solid rgba(58, 58, 58, 0.45); }
+        .value-card:last-child { border-bottom: none; }
+      }
+
+      /* page-enter — always visible, no JS dependency */
+      .page-enter { opacity: 1; }
+    </style>
+  </head>
+
+  <body class="grain font-sans antialiased">
+    <div class="cursor" id="cursor"></div>
+
+    <!-- Nav -->
+    <header id="nav" class="fixed top-0 inset-x-0 z-40 px-6 sm:px-10 py-6 flex items-center justify-between">
+      <a href="index.html" class="font-sans font-extrabold tracking-tight text-lg text-white hover-target">
+        <span class="text-accent">exe</span><span class="text-ink-100">mpl<span class="i-dot">i</span></span>
+      </a>
+      <nav class="hidden md:flex items-center gap-10 text-xs uppercase tracking-[0.18em] text-ink-100">
+        <a class="link-hover hover-target" href="work.html"><span class="link-inner">Work</span><span class="link-ghost">Work</span></a>
+        <a class="link-hover hover-target" href="process.html"><span class="link-inner">Process</span><span class="link-ghost">Process</span></a>
+        <a class="link-hover hover-target" href="about.html"><span class="link-inner text-accent">About</span><span class="link-ghost">About</span></a>
+      </nav>
+      <a href="index.html#contact" class="hover-target group inline-flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-white">
+        <span class="size-2 rounded-full bg-accent animate-pulse"></span>
+        Claim Free Consultation
+      </a>
+    </header>
+
+    <!-- Hero -->
+    <section class="relative min-h-[88vh] flex flex-col justify-end px-6 sm:px-10 pb-16 pt-40 overflow-hidden">
+      <canvas id="about-canvas" class="about-canvas"></canvas>
+
+      <div class="hero-content page-enter">
+        <div class="section-marker mb-10 flex items-center gap-6">
+          <span class="accent">//01</span>
+          <span>About · founded 2026</span>
+        </div>
+
+        <h1
+          class="font-sans font-extrabold tracking-[-0.04em] leading-[0.9] text-white"
+          style="font-size: clamp(56px, 11vw, 200px);"
+        >
+          <span class="block">small team.</span>
+          <span class="block text-accent">big problems.</span>
+        </h1>
+
+        <p class="mt-12 max-w-xl text-ink-100 text-base sm:text-lg leading-relaxed">
+          exempli is a small bench of senior engineers who care about software that fits.
+          We build custom — not because it's fashionable, but because most teams have
+          outgrown the off-the-shelf tools they started with.
+        </p>
+      </div>
+    </section>
+
+    <!-- Mission -->
+    <section class="relative px-6 sm:px-10 py-32">
+      <div class="section-marker mb-10 flex items-center gap-6 page-enter">
+        <span class="accent">//02</span>
+        <span>Mission</span>
+      </div>
+      <h2
+        class="font-sans font-bold tracking-[-0.03em] leading-[1.05] text-white max-w-5xl"
+        style="font-size: clamp(36px, 5vw, 84px);"
+      >
+        We exist to help teams replace the half-dozen apps that almost work with
+        <span class="text-accent">one thing</span> that fits — designed around how they
+        actually run, maintained by the people who built it.
+      </h2>
+    </section>
+
+    <!-- Values -->
+    <section class="relative">
+      <div class="px-6 sm:px-10">
+        <div class="section-marker mb-10 flex items-center gap-6 page-enter">
+          <span class="accent">//03</span>
+          <span>What we believe</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 border-y border-ink-500/40">
+        <div class="value-card">
+          <div class="value-marker section-marker mb-6">001 · Bias to fit</div>
+          <h3 class="value-title">Software designed around your team, not a generic best practice.</h3>
+          <p class="mt-5 text-ink-100 leading-relaxed">
+            Off-the-shelf is optimized for the average customer. You're not the average.
+            The fit matters more than the feature list.
+          </p>
+        </div>
+        <div class="value-card">
+          <div class="value-marker section-marker mb-6">002 · Less stack</div>
+          <h3 class="value-title">Fewer tools, tighter integration, lower mental load.</h3>
+          <p class="mt-5 text-ink-100 leading-relaxed">
+            Every app you adopt is a tax on attention. We build the one thing that
+            quietly replaces three of them.
+          </p>
+        </div>
+        <div class="value-card">
+          <div class="value-marker section-marker mb-6">003 · Stay on</div>
+          <h3 class="value-title">We maintain what we ship. No throwaway demos.</h3>
+          <p class="mt-5 text-ink-100 leading-relaxed">
+            Production-grade from day one. We're around when reality hits the model,
+            not in a deck six weeks ago.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Founder -->
+    <section class="relative px-6 sm:px-10 py-32 sm:py-40">
+      <div class="section-marker mb-10 flex items-center gap-6 page-enter">
+        <span class="accent">//04</span>
+        <span>Founder</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+        <div class="md:col-span-5">
+          <h3
+            class="font-sans font-extrabold tracking-[-0.03em] leading-[1] text-white"
+            style="font-size: clamp(36px, 5vw, 76px);"
+          >
+            Ethan Walker
+          </h3>
+          <p class="mt-4 section-marker">Founder · engineer · architect</p>
+        </div>
+        <div class="md:col-span-6 md:col-start-7 text-ink-100 text-base sm:text-lg leading-relaxed space-y-5">
+          <p>
+            Ethan started exempli after watching one too many teams pay for five tools that
+            half-solved one problem. He's built systems for clinics, logistics startups, indie
+            studios, and solo founders — always with the same bias: ship the one thing that
+            actually fits.
+          </p>
+          <p>
+            Outside of exempli he tinkers with synths, writes the occasional essay, and is a
+            reliable second opinion on whether your stack really needs that fourth dashboard.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact CTA -->
+    <section class="relative px-6 sm:px-10 pt-32 sm:pt-40 pb-10 overflow-hidden">
+      <div class="section-marker mb-10 flex items-center gap-6 page-enter">
+        <span class="accent">//05</span>
+        <span>Get in touch</span>
+      </div>
+      <h2
+        class="font-sans font-extrabold tracking-[-0.04em] leading-[0.9] text-white max-w-4xl"
+        style="font-size: clamp(44px, 7.5vw, 130px);"
+      >
+        say <span class="text-accent">hello</span>.
+      </h2>
+      <a
+        href="index.html#contact"
+        class="hover-target mt-12 inline-flex items-center gap-4 text-white text-lg sm:text-2xl underline-offset-8 hover:text-accent transition-colors"
+      >
+        <span>Claim Free Consultation</span>
+        <span>↗</span>
+      </a>
+
+      <footer class="mt-32 flex flex-col sm:flex-row justify-between gap-4 section-marker">
+        <span>exempli // custom software</span>
+        <span>© 2026 — all rights reserved</span>
+      </footer>
+    </section>
+
+    <script>
+      // Smooth scroll
+      const lenis = new Lenis({ duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 3) });
+      function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+      requestAnimationFrame(raf);
+      gsap.registerPlugin(ScrollTrigger);
+      lenis.on("scroll", () => ScrollTrigger.update());
+
+      // Nav scroll state
+      const navEl = document.getElementById("nav");
+      lenis.on("scroll", ({ scroll }) => navEl.classList.toggle("is-scrolled", scroll > 16));
+
+      // Cursor
+      const cursor = document.getElementById("cursor");
+      const pos = { x: innerWidth / 2, y: innerHeight / 2 };
+      const target = { x: pos.x, y: pos.y };
+      addEventListener("mousemove", (e) => { target.x = e.clientX; target.y = e.clientY; });
+      function animateCursor() {
+        pos.x += (target.x - pos.x) * 0.18;
+        pos.y += (target.y - pos.y) * 0.18;
+        cursor.style.transform = `translate(${pos.x}px, ${pos.y}px) translate(-50%, -50%)`;
+        requestAnimationFrame(animateCursor);
+      }
+      animateCursor();
+      document.querySelectorAll(".hover-target").forEach((el) => {
+        el.addEventListener("mouseenter", () => cursor.classList.add("is-hovering"));
+        el.addEventListener("mouseleave", () => cursor.classList.remove("is-hovering"));
+      });
+
+      // ----- 3D: smaller noise orb (same shader as home hero) -----
+      const aboutCanvas = document.getElementById("about-canvas");
+      const renderer = new THREE.WebGLRenderer({ canvas: aboutCanvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+      camera.position.set(0, 0, 4.2);
+      function sizeOrb() {
+        const w = aboutCanvas.clientWidth, h = aboutCanvas.clientHeight;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      sizeOrb();
+      addEventListener("resize", sizeOrb);
+
+      const geo = new THREE.IcosahedronGeometry(1.35, 96);
+      const orbMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uDistort: { value: 0.38 },
+          uMouse: { value: new THREE.Vector2(0, 0) },
+          uAccent: { value: new THREE.Color("#E8A87C") },
+          uDeep: { value: new THREE.Color("#1a0a04") },
+        },
+        vertexShader: `
+          uniform float uTime;
+          uniform float uDistort;
+          uniform vec2 uMouse;
+          varying vec3 vNormal;
+          varying float vDisp;
+          varying vec3 vView;
+          vec3 mod289(vec3 x){ return x - floor(x * (1.0/289.0)) * 289.0; }
+          vec4 mod289(vec4 x){ return x - floor(x * (1.0/289.0)) * 289.0; }
+          vec4 permute(vec4 x){ return mod289(((x*34.0)+1.0)*x); }
+          vec4 taylorInvSqrt(vec4 r){ return 1.79284291400159 - 0.85373472095314 * r; }
+          float snoise(vec3 v){
+            const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+            const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+            vec3 i = floor(v + dot(v, C.yyy));
+            vec3 x0 = v - i + dot(i, C.xxx);
+            vec3 g = step(x0.yzx, x0.xyz);
+            vec3 l = 1.0 - g;
+            vec3 i1 = min(g.xyz, l.zxy);
+            vec3 i2 = max(g.xyz, l.zxy);
+            vec3 x1 = x0 - i1 + C.xxx;
+            vec3 x2 = x0 - i2 + C.yyy;
+            vec3 x3 = x0 - D.yyy;
+            i = mod289(i);
+            vec4 p = permute(permute(permute(
+                       i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                     + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                     + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+            float n_ = 0.142857142857;
+            vec3 ns = n_ * D.wyz - D.xzx;
+            vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+            vec4 x_ = floor(j * ns.z);
+            vec4 y_ = floor(j - 7.0 * x_);
+            vec4 x = x_ * ns.x + ns.yyyy;
+            vec4 y = y_ * ns.x + ns.yyyy;
+            vec4 h = 1.0 - abs(x) - abs(y);
+            vec4 b0 = vec4(x.xy, y.xy);
+            vec4 b1 = vec4(x.zw, y.zw);
+            vec4 s0 = floor(b0)*2.0 + 1.0;
+            vec4 s1 = floor(b1)*2.0 + 1.0;
+            vec4 sh = -step(h, vec4(0.0));
+            vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+            vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+            vec3 p0 = vec3(a0.xy, h.x);
+            vec3 p1 = vec3(a0.zw, h.y);
+            vec3 p2 = vec3(a1.xy, h.z);
+            vec3 p3 = vec3(a1.zw, h.w);
+            vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+            p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+            vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+            m = m * m;
+            return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+          }
+          void main() {
+            float n1 = snoise(position * 1.1 + vec3(uTime * 0.22, uTime * 0.18, uTime * 0.26));
+            float n2 = snoise(position * 2.6 + uTime * 0.35) * 0.34;
+            float n3 = snoise(position * 5.8 + uTime * 0.52) * 0.17;
+            float n4 = snoise(position * 12.5 + uTime * 0.72) * 0.07;
+            float mouseInfluence = clamp(length(uMouse), 0.0, 1.5) * 0.32;
+            float disp = (n1 + n2 + n3 + n4) * uDistort + mouseInfluence;
+            vec3 displaced = position + normal * disp;
+            vNormal = normalize(normalMatrix * normal);
+            vDisp = disp;
+            vec4 mvPos = modelViewMatrix * vec4(displaced, 1.0);
+            vView = -mvPos.xyz;
+            gl_Position = projectionMatrix * mvPos;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uAccent;
+          uniform vec3 uDeep;
+          varying vec3 vNormal;
+          varying vec3 vView;
+          varying float vDisp;
+          void main() {
+            vec3 V = normalize(vView);
+            float fres = 1.0 - max(dot(vNormal, V), 0.0);
+            fres = pow(fres, 2.4);
+            vec3 col = mix(uDeep, uAccent, fres);
+            col += uAccent * smoothstep(0.05, 0.55, vDisp) * 0.5;
+            col += uAccent * 0.07;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `,
+      });
+
+      const orb = new THREE.Mesh(geo, orbMaterial);
+      scene.add(orb);
+
+      const mouse = new THREE.Vector2();
+      const mouseTarget = new THREE.Vector2();
+      addEventListener("mousemove", (e) => {
+        mouseTarget.x = (e.clientX / innerWidth) * 2 - 1;
+        mouseTarget.y = -(e.clientY / innerHeight) * 2 + 1;
+      });
+
+      let orbVisible = true;
+      new IntersectionObserver(([e]) => { orbVisible = e.isIntersecting; }, { threshold: 0.01 }).observe(aboutCanvas);
+
+      const clock = new THREE.Clock();
+      function render() {
+        requestAnimationFrame(render);
+        if (!orbVisible) return;
+        const t = clock.getElapsedTime();
+        mouse.lerp(mouseTarget, 0.12);
+        orbMaterial.uniforms.uTime.value = t;
+        orbMaterial.uniforms.uMouse.value.copy(mouse);
+        orb.rotation.x = mouse.y * 0.42 + Math.sin(t * 0.15) * 0.08;
+        orb.rotation.y = t * 0.08 + mouse.x * 0.58;
+        renderer.render(scene, camera);
+      }
+      render();
+      setTimeout(() => aboutCanvas.classList.add("is-visible"), 200);
+    </script>
+  </body>
+</html>
