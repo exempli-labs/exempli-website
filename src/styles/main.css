@@ -1,0 +1,404 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* Design tokens — single source of truth for the brand. */
+@theme {
+  --color-accent: #e8a87c;
+  --color-accent-dim: #c98c66;
+  --color-accent-bright: #f4b891;
+
+  --color-ink-900: #0a0a0a;
+  --color-ink-800: #111111;
+  --color-ink-700: #1a1a1a;
+  --color-ink-500: #3a3a3a;
+  --color-ink-300: #8a8a8a;
+  --color-ink-100: #b8b8b8;
+
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+}
+
+html,
+body {
+  background: #000;
+  color: var(--color-ink-100);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #000;
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared chrome — nav, wordmark, grain, cursor, markers, link hovers  */
+/* ------------------------------------------------------------------ */
+
+/* Nav scroll state */
+#nav {
+  transition:
+    background-color 0.45s ease,
+    backdrop-filter 0.45s ease,
+    -webkit-backdrop-filter 0.45s ease,
+    border-color 0.45s ease,
+    padding 0.4s ease;
+  border-bottom: 1px solid transparent;
+  background-color: transparent;
+}
+#nav.is-scrolled {
+  background-color: rgba(12, 12, 12, 0.62);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom-color: rgba(58, 58, 58, 0.35);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* Grain overlay */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Custom cursor */
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #e8a87c;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 90;
+  mix-blend-mode: difference;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.25s,
+    height 0.25s,
+    background 0.25s;
+}
+/* Enlarged ring, never a solid fill — a filled disc sits on top of the
+   exact text the user is trying to read. */
+.cursor.is-hovering {
+  width: 48px;
+  height: 48px;
+  background: rgba(232, 168, 124, 0.12);
+}
+@media (hover: none) {
+  .cursor {
+    display: none;
+  }
+}
+
+/* Section marker */
+.section-marker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #8a8a8a;
+  text-transform: uppercase;
+}
+.section-marker .accent {
+  color: #e8a87c;
+}
+
+/* Link hover */
+.link-hover {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+.link-hover .link-inner {
+  display: block;
+  transition: transform 0.5s cubic-bezier(0.6, 0, 0.2, 1);
+}
+.link-hover .link-ghost {
+  position: absolute;
+  inset: 0;
+  transform: translateY(100%);
+  transition: transform 0.5s cubic-bezier(0.6, 0, 0.2, 1);
+  color: #e8a87c;
+}
+.link-hover:hover .link-inner {
+  transform: translateY(-100%);
+}
+.link-hover:hover .link-ghost {
+  transform: translateY(0%);
+}
+
+/* page-enter — always visible, no JS dependency */
+.page-enter {
+  opacity: 1;
+}
+
+/* Keyboard focus — same accent language as hover states */
+:focus-visible {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Mobile menu                                                         */
+/* ------------------------------------------------------------------ */
+
+.menu-toggle {
+  display: none;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+@media (max-width: 767px) {
+  .menu-toggle {
+    display: block;
+  }
+}
+.menu-toggle .menu-line {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 1.5px;
+  background: #fff;
+  transition:
+    transform 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+    top 0.4s cubic-bezier(0.65, 0, 0.35, 1),
+    background 0.3s ease;
+}
+.menu-toggle .menu-line:nth-child(1) {
+  top: 13px;
+}
+.menu-toggle .menu-line:nth-child(2) {
+  top: 21px;
+}
+.menu-toggle[aria-expanded="true"] .menu-line {
+  background: var(--color-accent);
+}
+.menu-toggle[aria-expanded="true"] .menu-line:nth-child(1) {
+  top: 17px;
+  transform: rotate(45deg);
+}
+.menu-toggle[aria-expanded="true"] .menu-line:nth-child(2) {
+  top: 17px;
+  transform: rotate(-45deg);
+}
+
+/* Overlay sits under the fixed header (z-40) so the wordmark and the
+   toggle stay visible and clickable, and above all page content. */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgba(0, 0, 0, 0.96);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 6rem 1.5rem 3.5rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.45s ease,
+    visibility 0s linear 0.45s;
+}
+.mobile-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.45s ease,
+    visibility 0s;
+}
+.mobile-menu a {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: clamp(38px, 10vw, 56px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(26px);
+  opacity: 0;
+  transition:
+    transform 0.55s cubic-bezier(0.65, 0, 0.35, 1),
+    opacity 0.45s ease;
+}
+.mobile-menu a .menu-index {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--color-accent);
+}
+.mobile-menu a.is-active {
+  color: var(--color-accent);
+}
+.mobile-menu.is-open a {
+  transform: translateY(0);
+  opacity: 1;
+}
+.mobile-menu.is-open a:nth-child(1) { transition-delay: 0.08s; }
+.mobile-menu.is-open a:nth-child(2) { transition-delay: 0.14s; }
+.mobile-menu.is-open a:nth-child(3) { transition-delay: 0.2s; }
+.mobile-menu.is-open a:nth-child(4) { transition-delay: 0.26s; }
+.mobile-menu.is-open a:nth-child(5) { transition-delay: 0.32s; }
+.mobile-menu.is-open a:nth-child(6) { transition-delay: 0.38s; }
+
+/* ------------------------------------------------------------------ */
+/* Hero shade — guarantees type sits on near-black even where a 3D     */
+/* canvas is bright. Sits between the canvas (z:0) and content (z:1).  */
+/* ------------------------------------------------------------------ */
+
+.hero-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.55) 38%,
+    rgba(0, 0, 0, 0.12) 68%,
+    transparent 100%
+  );
+}
+.hero-shade--left {
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.6) 42%,
+    rgba(0, 0, 0, 0.15) 70%,
+    transparent 100%
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Cross-document page transitions (progressive — no-op where          */
+/* unsupported)                                                        */
+/* ------------------------------------------------------------------ */
+
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root) {
+  animation: vt-out 0.3s ease both;
+}
+::view-transition-new(root) {
+  animation: vt-in 0.45s ease both;
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Reduced motion                                                      */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+  .marquee-track {
+    animation: none;
+  }
+  .cursor {
+    display: none;
+  }
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/* Shared page base — terrain contact section (used on every page) */
+.contact-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 0;
+  transition: opacity 1.2s ease;
+}
+.contact-canvas.is-visible {
+  opacity: 0.9;
+}
+/* Soft fade-in from black at the top of the contact section
+   — replaces the hard border line */
+#contact::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22vh;
+  background: linear-gradient(
+    to bottom,
+    #000 0%,
+    rgba(0, 0, 0, 0.75) 25%,
+    rgba(0, 0, 0, 0.35) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+.contact-content {
+  position: relative;
+  z-index: 2;
+}
+/* Contact CTA — translucent frosted tile beside the headline, readable
+   over the bright terrain lines where a hairline button got lost */
+.contact-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2.25rem 2rem;
+  color: #fff;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  background: rgba(232, 168, 124, 0.09);
+  border: 1px solid rgba(232, 168, 124, 0.35);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition:
+    background 0.4s ease,
+    border-color 0.4s ease;
+}
+.contact-cta:hover {
+  background: rgba(232, 168, 124, 0.18);
+  border-color: var(--color-accent);
+}
+.contact-cta .contact-cta-arrow {
+  color: var(--color-accent);
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+.contact-cta:hover .contact-cta-arrow {
+  transform: translateX(4px);
+}

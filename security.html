@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en" class="bg-black text-zinc-200">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>exempli — security &amp; trust</title>
+    <meta name="description" content="How exempli handles your data, your IP, and your trust: NDA by default, you own the code, secure development practices, compliance-ready hosting." />
+
+    <link rel="stylesheet" href="/src/styles/main.css" />
+
+    <style>
+      /* Trust cards */
+      .trust-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-top: 1px solid rgba(58, 58, 58, 0.45);
+      }
+      .trust-card {
+        position: relative;
+        padding: 3rem 2rem 3.5rem;
+        border-bottom: 1px solid rgba(58, 58, 58, 0.45);
+        transition: background 0.5s ease;
+      }
+      .trust-card:nth-child(odd) { border-right: 1px solid rgba(58, 58, 58, 0.45); }
+      .trust-card:hover { background: rgba(232, 168, 124, 0.04); }
+      .trust-card::after {
+        content: ""; position: absolute; left: 0; bottom: -1px;
+        width: 0; height: 1px; background: #e8a87c;
+        transition: width 0.7s cubic-bezier(0.65, 0, 0.35, 1);
+      }
+      .trust-card:hover::after { width: 100%; }
+      .trust-marker { color: #8a8a8a; transition: color 0.4s ease; }
+      .trust-card:hover .trust-marker { color: #e8a87c; }
+      .trust-title {
+        font-family: var(--font-sans); font-weight: 800; color: #fff;
+        font-size: clamp(24px, 2.6vw, 40px); letter-spacing: -0.025em; line-height: 1.08;
+      }
+      .trust-card p { color: #b8b8b8; margin-top: 1.25rem; line-height: 1.6; max-width: 52ch; }
+      .trust-card li { color: #b8b8b8; line-height: 1.6; }
+      .trust-card ul { margin-top: 1rem; padding-left: 1.1rem; list-style: none; }
+      .trust-card li::before { content: "— "; color: #e8a87c; margin-left: -1.1rem; padding-right: 0.35rem; }
+
+      @media (max-width: 768px) {
+        .trust-grid { grid-template-columns: 1fr; }
+        .trust-card:nth-child(odd) { border-right: none; }
+        .trust-card { padding: 2.5rem 1rem 3rem; }
+      }
+
+      /* Hero canvas */
+      .hero-canvas {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        pointer-events: none; opacity: 0; z-index: 0;
+        transition: opacity 1s ease;
+      }
+      .hero-canvas.is-visible { opacity: 1; }
+      .hero-content { position: relative; z-index: 1; }
+    </style>
+  </head>
+
+  <body class="grain font-sans antialiased">
+    <div class="cursor" id="cursor"></div>
+
+    <!-- Nav -->
+    <header id="nav" class="fixed top-0 inset-x-0 z-40 px-6 sm:px-10 py-6 flex items-center justify-between">
+      <a href="index.html" class="hover-target">
+        <img src="/logo.png" alt="exempli" class="block h-[18px] w-auto" />
+      </a>
+      <nav class="hidden md:flex items-center gap-10 text-xs uppercase tracking-[0.18em] text-ink-100">
+        <a class="link-hover hover-target" href="index.html"><span class="link-inner">Home</span><span class="link-ghost">Home</span></a>
+        <a class="link-hover hover-target" href="work.html"><span class="link-inner">Work</span><span class="link-ghost">Work</span></a>
+        <a class="link-hover hover-target" href="process.html"><span class="link-inner">Process</span><span class="link-ghost">Process</span></a>
+        <a class="link-hover hover-target" href="about.html"><span class="link-inner">About</span><span class="link-ghost">About</span></a>
+        <a class="link-hover hover-target" href="security.html"><span class="link-inner text-accent">Security</span><span class="link-ghost">Security</span></a>
+      </nav>
+      <a href="index.html#contact" class="hover-target group hidden md:inline-flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-white">
+        <span class="size-2 rounded-full bg-accent animate-pulse"></span>
+        Claim Free Consultation
+      </a>
+      <button id="menu-toggle" class="menu-toggle" aria-expanded="false" aria-label="Open menu" aria-controls="mobile-menu">
+        <span class="menu-line"></span>
+        <span class="menu-line"></span>
+      </button>
+    </header>
+
+    <!-- Mobile menu (only nav below md) -->
+    <div id="mobile-menu" class="mobile-menu" aria-hidden="true">
+      <nav class="flex flex-col">
+        <a href="index.html"><span class="menu-index">01</span>home</a>
+        <a href="work.html"><span class="menu-index">02</span>work</a>
+        <a href="process.html"><span class="menu-index">03</span>process</a>
+        <a href="about.html"><span class="menu-index">04</span>about</a>
+        <a href="security.html" class="is-active"><span class="menu-index">05</span>security</a>
+        <a href="index.html#contact"><span class="menu-index">06</span>contact</a>
+      </nav>
+    </div>
+
+    <!-- Hero -->
+    <section class="relative min-h-[68vh] flex flex-col justify-end px-6 sm:px-10 pb-12 pt-36 overflow-hidden">
+      <canvas id="hero-canvas" class="hero-canvas"></canvas>
+
+      <div class="hero-content page-enter">
+        <div class="section-marker mb-10 flex items-center gap-6">
+          <span class="accent">//01</span>
+          <span>Security &amp; trust</span>
+        </div>
+
+        <h1
+          class="font-sans font-extrabold tracking-[-0.04em] leading-[0.9] text-white"
+          style="font-size: clamp(48px, min(9vw, 15vh), 170px);"
+        >
+          <span class="block">your data. your code.</span>
+          <span class="block"><span class="text-accent">your</span> software.</span>
+        </h1>
+
+        <p class="mt-10 max-w-xl text-ink-100 text-base sm:text-lg leading-relaxed">
+          Custom software means letting someone inside your business.
+          Here's exactly how we treat that access — what we take, what we don't,
+          and what you keep. No legalese, no fine print.
+        </p>
+
+        <div class="section-marker mt-24 flex items-center gap-6">
+          <span class="accent">//02</span>
+          <span>The commitments</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust cards -->
+    <section class="relative px-6 sm:px-10 pt-0 pb-16">
+      <div class="trust-grid">
+        <div class="trust-card">
+          <div class="trust-marker section-marker mb-6">001 · Data &amp; privacy</div>
+          <h2 class="trust-title">We see the minimum. You keep everything.</h2>
+          <p>
+            An audit needs visibility, not custody. We work against the smallest slice of
+            data that answers the question — anonymized or synthetic where possible.
+          </p>
+          <ul>
+            <li>Least-access by default: scoped accounts, revocable the day we're done</li>
+            <li>GDPR-aligned handling; EU data stays in the EU when you need it to</li>
+            <li>Your data is never used to train anything, sold, or shared</li>
+            <li>Full deletion of working copies on request — verified, not promised</li>
+          </ul>
+        </div>
+
+        <div class="trust-card">
+          <div class="trust-marker section-marker mb-6">002 · IP &amp; ownership</div>
+          <h2 class="trust-title">You own the code. All of it.</h2>
+          <p>
+            The software we build for you is yours — source, infrastructure config,
+            documentation, the lot. We don't rent you your own product.
+          </p>
+          <ul>
+            <li>Full IP assignment on delivery, in plain contract language</li>
+            <li>Standard, boring stacks — any competent team can take over</li>
+            <li>Code escrow available for the cautious</li>
+            <li>No lock-in: leaving us costs you a handshake, not a migration</li>
+          </ul>
+        </div>
+
+        <div class="trust-card">
+          <div class="trust-marker section-marker mb-6">003 · Confidentiality</div>
+          <h2 class="trust-title">NDA first. Names never.</h2>
+          <p>
+            Most engagements start with an NDA before we see anything — ours or yours,
+            whichever's stricter. What we learn inside your business stays there.
+          </p>
+          <ul>
+            <li>NDA by default before any audit begins</li>
+            <li>Named access list — you know exactly who can see what</li>
+            <li>No case studies, logos, or numbers published without written consent</li>
+          </ul>
+        </div>
+
+        <div class="trust-card">
+          <div class="trust-marker section-marker mb-6">004 · Secure development</div>
+          <h2 class="trust-title">Boring, disciplined, auditable.</h2>
+          <p>
+            Security isn't a feature we add at the end. It's how the work happens,
+            from the first commit.
+          </p>
+          <ul>
+            <li>Secrets live in managed vaults — never in code, chat, or email</li>
+            <li>Least-privilege access for every environment, reviewed monthly</li>
+            <li>Dependencies audited and pinned; updates are deliberate, not drive-by</li>
+            <li>Every change reviewed before merge; every release versioned and reversible</li>
+          </ul>
+        </div>
+
+        <div class="trust-card">
+          <div class="trust-marker section-marker mb-6">005 · Hosting &amp; compliance</div>
+          <h2 class="trust-title">Compliance-ready from day one.</h2>
+          <p>
+            We deploy on infrastructure your auditors already trust, configured so a
+            future SOC 2 or ISO journey starts from "mostly done" rather than zero.
+          </p>
+          <ul>
+            <li>SOC 2-ready cloud providers; EU or US data residency, your choice</li>
+            <li>Encryption in transit and at rest, everywhere, no exceptions</li>
+            <li>Automated backups with actually-tested recovery</li>
+            <li>Audit logs your compliance team can read without calling us</li>
+          </ul>
+        </div>
+
+        <div class="trust-card">
+          <div class="trust-marker section-marker mb-6">006 · What we don't do</div>
+          <h2 class="trust-title">The quiet part, out loud.</h2>
+          <p>
+            Some of the industry's defaults aren't ours. For the avoidance of any doubt:
+          </p>
+          <ul>
+            <li>No analytics, trackers, or phone-home code hidden in your product</li>
+            <li>No reselling, benchmarking, or "anonymized insights" from your data</li>
+            <li>No shadow subcontracting — the people you meet do the work</li>
+            <li>No hostage tactics: access, docs, and keys are handed over as we go</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact — shared page base -->
+    <section id="contact" class="relative px-6 sm:px-10 pt-24 sm:pt-32 pb-8 sm:pb-10 overflow-hidden">
+      <canvas id="contact-canvas" class="contact-canvas"></canvas>
+
+      <div class="contact-content">
+        <div class="section-marker mb-10 flex items-center gap-6">
+          <span class="accent">//03</span>
+          <span>Contact</span>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 lg:items-center">
+          <h2
+            class="lg:col-span-8 font-sans font-extrabold tracking-[-0.04em] leading-[0.9] text-white max-w-4xl"
+            style="font-size: clamp(48px, 8vw, 140px);"
+          >
+            need software that <span class="text-accent">fits</span>?
+          </h2>
+          <a href="mailto:hello@exempli.ai" class="contact-cta hover-target magnetic lg:col-span-4">
+            <span>Claim Free Consultation</span>
+            <span class="contact-cta-arrow">→</span>
+          </a>
+        </div>
+
+        <footer class="mt-16 border-t border-ink-500/30 pt-8 flex flex-col sm:flex-row justify-between gap-4 section-marker">
+          <span>exempli // custom software</span>
+          <nav class="flex gap-6">
+            <a class="hover-target hover:text-accent transition-colors" href="work.html">work</a>
+            <a class="hover-target hover:text-accent transition-colors" href="process.html">process</a>
+            <a class="hover-target hover:text-accent transition-colors" href="about.html">about</a>
+            <a class="hover-target hover:text-accent transition-colors" href="security.html">security</a>
+          </nav>
+          <span>© 2026 — all rights reserved</span>
+        </footer>
+      </div>
+    </section>
+
+    <script type="module" src="/src/js/pages/security.js"></script>
+  </body>
+</html>
