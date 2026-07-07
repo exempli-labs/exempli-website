@@ -6,6 +6,26 @@
     <title>exempli — custom software for teams drowning in tooling</title>
     <meta name="description" content="exempli designs and ships custom software. Less stack, more leverage — software built around how your team actually works." />
 
+    <!-- Skip the black loader BEFORE first paint on any visit that won't play
+         the intro (return navigations, e.g. clicking the logo, and reduced
+         motion). Otherwise the full-screen loader sits black through the whole
+         heavy WebGL warm-up and the page only appears once JS tears it down —
+         which read as the orb popping in ahead of the site. Keyed on the exact
+         same signals the module uses to decide isFirstVisit, so the two never
+         disagree. -->
+    <script>
+      (function () {
+        try {
+          var forceIntro = new URLSearchParams(location.search).has("intro");
+          var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+          var seen = sessionStorage.getItem("exempli-seen");
+          if (!forceIntro && (seen || reduced)) {
+            document.documentElement.classList.add("intro-skip");
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <link rel="stylesheet" href="/src/styles/main.css" />
 
     <style>
@@ -19,42 +39,14 @@
         place-items: center;
         font-family: var(--font-mono);
       }
-      .loader-word-stack {
-        position: relative;
-        width: 100%;
-        height: clamp(80px, 14vw, 200px);
-        overflow: hidden;
-        pointer-events: none;
+      /* Return / reduced-motion visits: never paint the loader at all. The head
+         script sets .intro-skip before the loader is parsed, so the real page
+         (nav + headline) is the very first paint — instant, no black wait. */
+      .intro-skip .loader {
+        display: none;
       }
-      .loader-word {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--font-sans);
-        font-size: clamp(56px, 11vw, 170px);
-        letter-spacing: -0.04em;
-        line-height: 1;
-        white-space: nowrap;
-      }
-      .loader-word-1 {
-        font-weight: 800;
-        font-style: normal;
-        color: #fff;
-        transform: translateY(0);
-        opacity: 1;
-        transition:
-          transform 0.5s cubic-bezier(0.65, 0, 0.35, 1),
-          opacity 0.45s ease;
-      }
-      /* Introducing slides up + clears as the reveal takes over */
-      .loader-word-1.is-gone {
-        transform: translateY(-120%);
-        opacity: 0;
-      }
-
-      /* Logo-reveal video — plays in place of the word, dead center */
+      /* Logo-reveal video — the whole intro, dead center. Opens on black
+         with the dot already in shot, so it can sit visible from load. */
       .loader-video {
         position: absolute;
         top: 50%;
@@ -64,16 +56,16 @@
         aspect-ratio: 16 / 9;
         object-fit: contain;
         background: #000;
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.96);
-        transition:
-          opacity 0.55s ease,
-          transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        transform: translate(-50%, -50%);
         pointer-events: none;
       }
-      .loader-video.is-playing {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+      /* Phones: full-bleed width — the wordmark (and the dot the orb morphs
+         out of) is otherwise too small to carry the moment. The 16:9 box's
+         letterbox is invisible on black, so there's no downside. */
+      @media (max-width: 640px) {
+        .loader-video {
+          width: 100vw;
+        }
       }
       .loader-bar {
         position: absolute;
@@ -103,6 +95,18 @@
         letter-spacing: 0.08em;
         color: #8a8a8a;
         text-transform: uppercase;
+      }
+      /* Skip hint — arrives late so the brand moment leads */
+      .loader-skip {
+        opacity: 0;
+        animation: skip-in 0.6s ease 1.4s forwards;
+      }
+      @keyframes skip-in {
+        to { opacity: 0.8; }
+      }
+      /* Narrow screens: drop the decorative brand line, keep skip + meter */
+      @media (max-width: 480px) {
+        .loader-meta span:first-child { display: none; }
       }
 
       /* Char split */
@@ -159,6 +163,11 @@
         pointer-events: none;
         opacity: 0;
         z-index: 0;
+        /* When the loader is skipped the site is up before the orb has warmed,
+           so composeHero() flipping opacity 0 → 1 eases the orb in rather than
+           snapping it on top of the already-visible page. On the intro path
+           this fade happens behind the opaque loader, so it's invisible there. */
+        transition: opacity 0.55s ease;
       }
       /* Scroll cue — slow breathe, switched on by JS after 5s without scrolling */
       @keyframes cue-pulse {
@@ -192,16 +201,13 @@
         z-index: 1;
       }
       /* Pillars grid — interactive expanding text */
+      /* Fixed 3-up grid — tiles never resize or reflow on interaction. */
       .pillars-grid {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         border-top: 1px solid rgba(58, 58, 58, 0.45);
         border-bottom: 1px solid rgba(58, 58, 58, 0.45);
-        transition: grid-template-columns 0.75s cubic-bezier(0.65, 0, 0.35, 1);
       }
-      .pillars-grid[data-active="0"] { grid-template-columns: 2.2fr 1fr 1fr; }
-      .pillars-grid[data-active="1"] { grid-template-columns: 1fr 2.2fr 1fr; }
-      .pillars-grid[data-active="2"] { grid-template-columns: 1fr 1fr 2.2fr; }
 
       .pillar {
         position: relative;
@@ -211,28 +217,44 @@
         border-right: 1px solid rgba(58, 58, 58, 0.45);
         padding: 3rem 2rem 4rem;
         min-height: 320px;
-        cursor: pointer;
         color: inherit;
         font: inherit;
         overflow: hidden;
-        transition:
-          background 0.5s ease,
-          padding 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+        isolation: isolate;
+        transition: background 0.5s ease;
       }
       .pillar:last-child { border-right: 0; }
-      .pillar:hover,
-      .pillar.is-locked {
+      /* Hover: tint only — no padding shift, no resize. */
+      .pillar:hover {
         background: rgba(232, 168, 124, 0.05);
-        padding-left: 3rem;
-        padding-right: 3rem;
+      }
+
+      /* Cursor spotlight — a soft peach light tracks the pointer inside the
+         tile. The tile itself never moves; only the glow follows the cursor.
+         Sits above the flat hover tint but below the text (z-index -1 within
+         the tile's own stacking context). */
+      .pillar-glow {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0;
+        background: radial-gradient(
+          circle 220px at var(--mx, 50%) var(--my, 50%),
+          rgba(232, 168, 124, 0.14),
+          transparent 62%
+        );
+        transition: opacity 0.5s ease;
+      }
+      .pillar:hover .pillar-glow {
+        opacity: 1;
       }
 
       .pillar-marker {
         margin-bottom: 1.75rem;
         transition: color 0.4s ease;
       }
-      .pillar:hover .pillar-marker,
-      .pillar.is-locked .pillar-marker {
+      .pillar:hover .pillar-marker {
         color: #e8a87c;
       }
 
@@ -241,16 +263,11 @@
         line-height: 1.55;
         color: #b8b8b8;
         max-width: 36ch;
-        transition:
-          font-size 0.55s cubic-bezier(0.65, 0, 0.35, 1),
-          color 0.4s ease,
-          max-width 0.6s ease;
+        transition: color 0.4s ease;
       }
-      .pillar:hover .pillar-body,
-      .pillar.is-locked .pillar-body {
-        font-size: 1.35rem;
+      /* Brighten the copy on hover — colour only, size stays put. */
+      .pillar:hover .pillar-body {
         color: #ffffff;
-        max-width: 48ch;
       }
 
       .pillar-cue {
@@ -267,14 +284,13 @@
           transform 0.5s ease,
           color 0.4s ease;
       }
-      .pillar:hover .pillar-cue,
-      .pillar.is-locked .pillar-cue {
+      .pillar:hover .pillar-cue {
         opacity: 1;
         transform: translateY(0);
         color: #e8a87c;
       }
 
-      /* Bottom peach progress line on hover/lock */
+      /* Bottom peach progress line on hover */
       .pillar::after {
         content: "";
         position: absolute;
@@ -285,36 +301,13 @@
         background: #e8a87c;
         transition: width 0.75s cubic-bezier(0.65, 0, 0.35, 1);
       }
-      .pillar:hover::after,
-      .pillar.is-locked::after { width: 100%; }
-
-      /* Lock indicator */
-      .pillar.is-locked::before {
-        content: "";
-        position: absolute;
-        top: 1.4rem;
-        right: 1.4rem;
-        width: 6px;
-        height: 6px;
-        background: #e8a87c;
-        border-radius: 50%;
-        box-shadow: 0 0 0 4px rgba(232, 168, 124, 0.18);
-        animation: pulse-dot 1.6s ease-in-out infinite;
-      }
-      @keyframes pulse-dot {
-        0%, 100% { box-shadow: 0 0 0 4px rgba(232, 168, 124, 0.18); }
-        50%      { box-shadow: 0 0 0 8px rgba(232, 168, 124, 0.05); }
-      }
+      .pillar:hover::after { width: 100%; }
 
       @media (max-width: 768px) {
         .pillars-grid {
           grid-template-columns: 1fr !important;
-          grid-template-rows: minmax(120px, auto) minmax(120px, auto) minmax(120px, auto);
-          transition: grid-template-rows 0.75s cubic-bezier(0.65, 0, 0.35, 1);
+          grid-template-rows: auto auto auto;
         }
-        .pillars-grid[data-active="0"] { grid-template-rows: 2.4fr 1fr 1fr; }
-        .pillars-grid[data-active="1"] { grid-template-rows: 1fr 2.4fr 1fr; }
-        .pillars-grid[data-active="2"] { grid-template-rows: 1fr 1fr 2.4fr; }
         .pillar {
           border-right: 0;
           border-bottom: 1px solid rgba(58, 58, 58, 0.45);
@@ -322,10 +315,6 @@
           padding: 2rem 1.5rem 3rem;
         }
         .pillar:last-child { border-bottom: 0; }
-        .pillar:hover,
-        .pillar.is-locked {
-          padding: 3rem 1.5rem 4rem;
-        }
       }
     </style>
   </head>
@@ -333,9 +322,6 @@
   <body class="grain font-sans antialiased">
     <!-- Loader -->
     <div class="loader" id="loader">
-      <div class="loader-word-stack">
-        <div class="loader-word loader-word-1">Introducing</div>
-      </div>
       <video
         class="loader-video"
         id="loader-video"
@@ -349,6 +335,7 @@
       <div class="loader-bar"><div class="loader-bar-fill" id="loader-bar"></div></div>
       <div class="loader-meta">
         <span>exempli // 2026</span>
+        <span class="loader-skip">click to skip</span>
         <span>loading — <span id="loader-pct">00</span>%</span>
       </div>
     </div>
@@ -359,15 +346,15 @@
     <!-- Nav -->
     <header id="nav" class="fixed top-0 inset-x-0 z-40 px-6 sm:px-10 py-6 flex items-center justify-between">
       <a href="index.html" class="hover-target">
-        <img src="/logo.png" alt="exempli" class="block h-[18px] w-auto" />
+        <img src="/logo.png" alt="exempli" class="block h-[26px] w-auto" />
       </a>
-      <nav class="hidden md:flex items-center gap-10 text-xs uppercase tracking-[0.18em] text-ink-100">
+      <nav class="hidden md:flex items-center gap-10 text-sm uppercase tracking-[0.18em] text-ink-100">
         <a class="link-hover hover-target" href="work.html"><span class="link-inner">Work</span><span class="link-ghost">Work</span></a>
         <a class="link-hover hover-target" href="process.html"><span class="link-inner">Process</span><span class="link-ghost">Process</span></a>
         <a class="link-hover hover-target" href="about.html"><span class="link-inner">About</span><span class="link-ghost">About</span></a>
         <a class="link-hover hover-target" href="security.html"><span class="link-inner">Security</span><span class="link-ghost">Security</span></a>
       </nav>
-      <a href="#contact" class="hover-target group hidden md:inline-flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-white">
+      <a href="#contact" class="hover-target group hidden md:inline-flex items-center gap-3 text-sm uppercase tracking-[0.18em] text-white">
         <span class="size-2 rounded-full bg-accent animate-pulse"></span>
         Claim Free Consultation
       </a>
@@ -427,10 +414,10 @@
         <div class="mt-8 md:mt-10 flex md:justify-end" data-fade>
           <a
             href="#contact"
-            class="hover-target magnetic group flex w-full md:w-auto md:min-w-[480px] items-center justify-between gap-4 text-white border border-ink-500 hover:border-accent transition-colors px-8 py-6 text-xs uppercase tracking-[0.18em]"
+            class="hover-target magnetic group flex w-full md:w-auto md:min-w-[600px] items-center justify-between gap-4 text-white border border-ink-500 hover:border-accent transition-colors px-10 py-8 text-sm sm:text-base uppercase tracking-[0.18em]"
           >
             <span>Claim Free Consultation</span>
-            <span class="text-accent transition-transform group-hover:translate-x-1">→</span>
+            <span class="text-accent text-xl transition-transform group-hover:translate-x-1">→</span>
           </a>
         </div>
       </div>
@@ -480,27 +467,30 @@
       </h2>
 
       <div class="pillars-grid mt-14" id="pillars" data-fade>
-        <button class="pillar hover-target" type="button" data-pillar="0">
-          <div class="pillar-marker section-marker">001 · Audit</div>
+        <div class="pillar hover-target">
+          <span class="pillar-glow" aria-hidden="true"></span>
+          <div class="pillar-marker section-marker"><span class="tag-num">001</span> · Audit</div>
           <p class="pillar-body">
             We sit with your team and map the stack. The fix usually starts by seeing which tools earn their keep and which don't.
           </p>
           <span class="pillar-cue">↗</span>
-        </button>
-        <button class="pillar hover-target" type="button" data-pillar="1">
-          <div class="pillar-marker section-marker">002 · Build</div>
+        </div>
+        <div class="pillar hover-target">
+          <span class="pillar-glow" aria-hidden="true"></span>
+          <div class="pillar-marker section-marker"><span class="tag-num">002</span> · Build</div>
           <p class="pillar-body">
             Custom software designed around your workflow. Fewer tools, tighter fit, production-grade from day one.
           </p>
           <span class="pillar-cue">↗</span>
-        </button>
-        <button class="pillar hover-target" type="button" data-pillar="2">
-          <div class="pillar-marker section-marker">003 · Tune</div>
+        </div>
+        <div class="pillar hover-target">
+          <span class="pillar-glow" aria-hidden="true"></span>
+          <div class="pillar-marker section-marker"><span class="tag-num">003</span> · Tune</div>
           <p class="pillar-body">
             We stay past deploy. Software needs tending — better to catch a regression than read about it later.
           </p>
           <span class="pillar-cue">↗</span>
-        </button>
+        </div>
       </div>
     </section>
 

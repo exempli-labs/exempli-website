@@ -57,6 +57,9 @@ export function initCursor() {
   window.addEventListener("mousemove", (e) => {
     target.x = e.clientX;
     target.y = e.clientY;
+    // First real movement wakes the ring — until then it stays invisible
+    // instead of sitting parked at the viewport centre.
+    cursor.classList.add("is-live");
   });
   function animateCursor() {
     pos.x += (target.x - pos.x) * 0.18;

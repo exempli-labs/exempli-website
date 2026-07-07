@@ -39,7 +39,7 @@
       }
       .case-row:hover { background: rgba(232, 168, 124, 0.04); padding: 3rem 2rem; }
       .case-row:hover::after { width: 100%; }
-      .case-meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; color: #8a8a8a; text-transform: uppercase; transition: color 0.4s ease; }
+      .case-meta { font-family: var(--font-tag); font-weight: 700; font-size: var(--tag-size); letter-spacing: 0.14em; color: #e8a87c; text-transform: lowercase; transition: color 0.4s ease; }
       .case-row:hover .case-meta { color: #e8a87c; }
       .case-title {
         font-family: var(--font-sans); font-weight: 800; color: #fff;
@@ -69,16 +69,16 @@
     <!-- Nav -->
     <header id="nav" class="fixed top-0 inset-x-0 z-40 px-6 sm:px-10 py-6 flex items-center justify-between">
       <a href="index.html" class="hover-target">
-        <img src="/logo.png" alt="exempli" class="block h-[18px] w-auto" />
+        <img src="/logo.png" alt="exempli" class="block h-[26px] w-auto" />
       </a>
-      <nav class="hidden md:flex items-center gap-10 text-xs uppercase tracking-[0.18em] text-ink-100">
+      <nav class="hidden md:flex items-center gap-10 text-sm uppercase tracking-[0.18em] text-ink-100">
         <a class="link-hover hover-target" href="index.html"><span class="link-inner">Home</span><span class="link-ghost">Home</span></a>
         <a class="link-hover hover-target" href="work.html"><span class="link-inner text-accent">Work</span><span class="link-ghost">Work</span></a>
         <a class="link-hover hover-target" href="process.html"><span class="link-inner">Process</span><span class="link-ghost">Process</span></a>
         <a class="link-hover hover-target" href="about.html"><span class="link-inner">About</span><span class="link-ghost">About</span></a>
         <a class="link-hover hover-target" href="security.html"><span class="link-inner">Security</span><span class="link-ghost">Security</span></a>
       </nav>
-      <a href="index.html#contact" class="hover-target group hidden md:inline-flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-white">
+      <a href="index.html#contact" class="hover-target group hidden md:inline-flex items-center gap-3 text-sm uppercase tracking-[0.18em] text-white">
         <span class="size-2 rounded-full bg-accent animate-pulse"></span>
         Claim Free Consultation
       </a>
@@ -138,7 +138,7 @@
       <div class="case-list" id="case-list">
         <a href="#" class="case-row hover-target" data-case>
           <div>
-            <div class="case-meta">2026 · Mid-market clinic</div>
+            <div class="case-meta"><span class="tag-num">2026</span> · Mid-market clinic</div>
           </div>
           <div>
             <h2 class="case-title">Replaced five SaaS tools with one custom platform.</h2>
@@ -149,7 +149,7 @@
 
         <a href="#" class="case-row hover-target" data-case>
           <div>
-            <div class="case-meta">2026 · Logistics startup</div>
+            <div class="case-meta"><span class="tag-num">2026</span> · Logistics startup</div>
           </div>
           <div>
             <h2 class="case-title">Route optimizer, shipped in six weeks.</h2>
@@ -160,7 +160,7 @@
 
         <a href="#" class="case-row hover-target" data-case>
           <div>
-            <div class="case-meta">2025 · Indie media studio</div>
+            <div class="case-meta"><span class="tag-num">2025</span> · Indie media studio</div>
           </div>
           <div>
             <h2 class="case-title">One CMS, three publications, zero plugins.</h2>
@@ -171,7 +171,7 @@
 
         <a href="#" class="case-row hover-target" data-case>
           <div>
-            <div class="case-meta">2025 · Solo founder</div>
+            <div class="case-meta"><span class="tag-num">2025</span> · Solo founder</div>
           </div>
           <div>
             <h2 class="case-title">Zero to paying users in nine weeks.</h2>
