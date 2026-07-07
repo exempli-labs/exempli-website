@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource/space-mono/400.css";
+@import "@fontsource/space-mono/700.css";
 
 /* Design tokens — single source of truth for the brand. */
 @theme {
@@ -17,6 +19,11 @@
 
   --font-sans: "Inter Variable", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --font-tag: "Space Mono", ui-monospace, monospace;
+  --tag-size: 18px;
+  /* Space Mono's figures are full cap-height; lowercase words only reach
+     x-height. Scale the numbers down so they optically match the words. */
+  --tag-num-scale: 0.78;
 }
 
 html,
@@ -38,6 +45,7 @@ body {
 
 /* Nav scroll state */
 #nav {
+  font-family: var(--font-tag);
   transition:
     background-color 0.45s ease,
     backdrop-filter 0.45s ease,
@@ -81,10 +89,17 @@ body {
   z-index: 90;
   mix-blend-mode: difference;
   transform: translate(-50%, -50%);
+  /* Hidden until the pointer first moves — otherwise the ring sits parked
+     dead-centre over the intro (and every fresh page) like a stray artifact. */
+  opacity: 0;
   transition:
     width 0.25s,
     height 0.25s,
-    background 0.25s;
+    background 0.25s,
+    opacity 0.3s;
+}
+.cursor.is-live {
+  opacity: 1;
 }
 /* Enlarged ring, never a solid fill — a filled disc sits on top of the
    exact text the user is trying to read. */
@@ -101,14 +116,28 @@ body {
 
 /* Section marker */
 .section-marker {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  color: #8a8a8a;
-  text-transform: uppercase;
+  font-family: var(--font-tag);
+  font-weight: 700;
+  font-size: var(--tag-size);
+  letter-spacing: 0.14em;
+  color: #e8a87c;
+  text-transform: lowercase;
 }
 .section-marker .accent {
   color: #e8a87c;
+  font-size: calc(1em * var(--tag-num-scale));
+}
+/* Leading figures in numbered tags (001 · Audit, 2026 · …) — scaled to sit
+   level with the lowercase words rather than towering over them. */
+.tag-num {
+  font-size: calc(1em * var(--tag-num-scale));
+}
+
+/* Page footer keeps the brand mono but stays neutral grey — the accent
+   orange is reserved for the content eyebrows, not the chrome. */
+footer.section-marker,
+footer.section-marker .accent {
+  color: #8a8a8a;
 }
 
 /* Link hover */
@@ -371,28 +400,109 @@ body {
 }
 /* Contact CTA — translucent frosted tile beside the headline, readable
    over the bright terrain lines where a hairline button got lost */
+/* Rotating orb-light border for the primary CTA.
+   A single warm arc (amber -> peach -> cream -> white core) orbits the
+   rounded border and casts a soft bloom onto the page, echoing the hero orb.
+   CSS-only: the ::before is the crisp masked ring, ::after the blurred bloom. */
+@property --cta-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
 .contact-cta {
+  /* tunables (dialed in the cta lab) */
+  --cta-spin: 5.3s;
+  --cta-arc: 70deg;
+  --cta-thick: 4px;
+  --cta-bloom: 30px;
+  --cta-bloom-opacity: 0.45;
+  --cta-rim: 0.4;
+
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
   padding: 2.25rem 2rem;
+  border-radius: 14px;
   color: #fff;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   white-space: nowrap;
   background: rgba(232, 168, 124, 0.09);
-  border: 1px solid rgba(232, 168, 124, 0.35);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  transition:
-    background 0.4s ease,
-    border-color 0.4s ease;
+  transition: background 0.4s ease;
+}
+/* bloom — blurred arc, spills outside the body, sits behind the glass */
+.contact-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--cta-angle),
+    transparent 0deg,
+    transparent calc(360deg - var(--cta-arc)),
+    var(--color-accent-dim) calc(360deg - var(--cta-arc) * 0.78),
+    var(--color-accent) calc(360deg - var(--cta-arc) * 0.45),
+    var(--color-accent-bright) calc(360deg - var(--cta-arc) * 0.18),
+    #ffffff calc(360deg - var(--cta-arc) * 0.05),
+    transparent 360deg
+  );
+  filter: blur(var(--cta-bloom));
+  opacity: var(--cta-bloom-opacity);
+  animation: cta-orbit var(--cta-spin) linear infinite;
+  pointer-events: none;
+}
+/* crisp ring — same arc masked to the border line, above the body */
+.contact-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: var(--cta-thick);
+  background: conic-gradient(
+    from var(--cta-angle),
+    hsl(28 45% 55% / var(--cta-rim)) 0deg,
+    hsl(28 45% 55% / var(--cta-rim)) calc(360deg - var(--cta-arc)),
+    var(--color-accent-dim) calc(360deg - var(--cta-arc) * 0.78),
+    var(--color-accent) calc(360deg - var(--cta-arc) * 0.45),
+    var(--color-accent-bright) calc(360deg - var(--cta-arc) * 0.18),
+    #ffffff calc(360deg - var(--cta-arc) * 0.05),
+    hsl(28 45% 55% / var(--cta-rim)) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: cta-orbit var(--cta-spin) linear infinite;
+  pointer-events: none;
+}
+@keyframes cta-orbit {
+  to {
+    --cta-angle: 360deg;
+  }
 }
 .contact-cta:hover {
-  background: rgba(232, 168, 124, 0.18);
-  border-color: var(--color-accent);
+  background: rgba(232, 168, 124, 0.16);
+  --cta-spin: 3s;
+  --cta-bloom-opacity: 0.6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-cta::before,
+  .contact-cta::after {
+    animation: none;
+    --cta-angle: 312deg;
+  }
 }
 .contact-cta .contact-cta-arrow {
   color: var(--color-accent);
